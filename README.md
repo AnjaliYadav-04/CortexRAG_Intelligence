@@ -1,4 +1,4 @@
-# Enterprise Advanced RAG — Kubernetes SRE Copilot
+# Enterprise Advanced RAG — Kubernetes SRE Copilot :CorexRAG
 
 > LangGraph · Hybrid Search · CRAG · Self-RAG · Text2SQL (HITL) · 5-Tier Cache · 9-Layer Guardrails
 
@@ -11,6 +11,119 @@ SRE/User → FastAPI → 9-Layer Input Security → LangGraph State Machine
                                                    ├── RAG Pipeline (HyDE → Hybrid Retrieval → RRF → Rerank → CRAG → Self-RAG)
                                                    └── Text2SQL Pipeline (GPT-4o → Validate → HITL → Execute)
                                                → 5-Tier Redis Cache → Response
+```
+# 🔄 Workflow Diagram
+
+```mermaid
+flowchart TD
+
+    U[SRE / User]
+    F[FastAPI Service]
+
+    %% Input Security
+    subgraph INPUT["🔐 Input Security Pipeline (9 Layers)"]
+        I1[Pydantic + Regex]
+        I2[JWT Auth]
+        I3[Rate Limit]
+        I4[Token Budget]
+        I5[Input Restructure]
+        I6[LLM Guard Scan]
+        I7[Content Moderation]
+    end
+
+    %% Cache Layer
+    subgraph CACHE["⚡ 5-Tier Redis Cache"]
+        C1[Embedding Cache]
+        C2[Intent Router Cache]
+        C3[SQL Generation Cache]
+        C4[SQL Result Cache]
+        C5[RAG Answer Cache]
+    end
+
+    %% LangGraph State Machine
+    subgraph LANGGRAPH["🧠 LangGraph State Machine"]
+
+        R[Intent Router]
+
+        %% RAG Pipeline
+        subgraph RAG["📘 RAG Pipeline"]
+            H[HyDE]
+            E[Embed Query]
+            HR[Hybrid Retrieval]
+            RF[RRF Fusion]
+            RR[Cross-Encoder Rerank]
+            CG[CRAG Grader]
+            SP[Spotlighting]
+            TV[Tavily Fallback]
+        end
+
+        %% SQL Pipeline
+        subgraph SQL["🗄️ Text2SQL Pipeline"]
+            GS[Generate SQL]
+            VS[Validate SQL]
+            HITL[Human Approval]
+            EX[Execute SQL]
+            FR[Format Results]
+        end
+
+        LG[LLM Answer Generation]
+        SR[Self-RAG Reflect]
+        FN[Finalize + Attach Metadata]
+    end
+
+    %% Output Security
+    subgraph OUTPUT["🛡️ Output Security Pipeline"]
+        O1[Output Moderation]
+        O2[PII Redaction]
+        O3[Pydantic Schema Validation]
+    end
+
+    %% Persistent Stores
+    subgraph STORES["💾 Persistent Data Stores"]
+        Q[Qdrant]
+        P[PostgreSQL]
+        S[S3 / Local FS]
+        OAI[OpenAI API]
+        T[Tavily API]
+    end
+
+    %% Main Flow
+    U --> F
+    F --> I1
+    I1 --> I2 --> I3 --> I4 --> I5 --> I6 --> I7
+    I7 --> R
+
+    %% Cache Wrapping
+    F --> CACHE
+
+    %% Intent Routing
+    R -->|rag / hybrid| H
+    R -->|sql / hybrid| GS
+
+    %% RAG Flow
+    H --> E --> HR --> RF --> RR --> CG --> SP
+    CG -->|low relevance| TV
+    TV --> SP
+    SP --> LG
+
+    %% SQL Flow
+    GS --> VS --> HITL --> EX --> FR --> LG
+
+    %% Self Reflection
+    LG --> SR
+    SR -->|score < 0.8| LG
+    LG --> FN
+
+    %% Output Security
+    FN --> O1 --> O2 --> O3 --> U
+
+    %% Data Connections
+    HR --> Q
+    EX --> P
+    H --> OAI
+    GS --> OAI
+    TV --> T
+    SP --> S
 ```
 
 ## Quick Start
