@@ -1,0 +1,53 @@
+# Core
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+pydantic==2.7.1
+pydantic-settings==2.3.1
+python-dotenv==1.0.1
+httpx==0.27.0
+
+# LangGraph / LangChain
+langgraph==0.1.5
+langchain==0.2.1
+langchain-openai==0.1.7
+langchain-community==0.2.1
+
+# Vector DB
+qdrant-client==1.9.1
+
+# Database
+asyncpg==0.29.0
+sqlalchemy[asyncio]==2.0.30
+psycopg2-binary==2.9.9
+
+# Cache
+redis[hiredis]==5.0.4
+
+# Security / Auth
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+llm-guard==0.3.13
+
+# NLP / Embeddings
+tiktoken==0.7.0
+rank_bm25==0.2.2
+sentence-transformers==3.0.0
+
+# Web search fallback
+tavily-python==0.3.3
+
+# UI
+streamlit==1.35.0
+
+# Evaluation
+ragas==0.1.14
+datasets==2.19.2
+
+# Utilities
+tenacity==8.3.0
+structlog==24.2.0
+prometheus-client==0.20.0
+
+# Testing
+pytest==8.2.2
+pytest-asyncio==0.23.7
