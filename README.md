@@ -17,115 +17,142 @@ SRE/User → FastAPI → 9-Layer Input Security → LangGraph State Machine
 ```mermaid
 flowchart TD
 
-    U[SRE / User]
-    F[FastAPI Service]
+%% Nodes Styling
+classDef user fill:#0ea5e9,color:#fff,stroke:#0369a1,stroke-width:2px;
+classDef api fill:#6366f1,color:#fff,stroke:#4338ca,stroke-width:2px;
+classDef input fill:#f97316,color:#fff,stroke:#c2410c,stroke-width:2px;
+classDef rag fill:#3b82f6,color:#fff,stroke:#1d4ed8,stroke-width:2px;
+classDef sql fill:#10b981,color:#fff,stroke:#047857,stroke-width:2px;
+classDef llm fill:#ec4899,color:#fff,stroke:#be185d,stroke-width:2px;
+classDef cache fill:#ef4444,color:#fff,stroke:#b91c1c,stroke-width:2px;
+classDef output fill:#dc2626,color:#fff,stroke:#991b1b,stroke-width:2px;
+classDef db fill:#14b8a6,color:#fff,stroke:#0f766e,stroke-width:2px;
+classDef decision fill:#8b5cf6,color:#fff,stroke:#6d28d9,stroke-width:2px;
 
-    %% Input Security
-    subgraph INPUT["🔐 Input Security Pipeline (9 Layers)"]
-        I1[Pydantic + Regex]
-        I2[JWT Auth]
-        I3[Rate Limit]
-        I4[Token Budget]
-        I5[Input Restructure]
-        I6[LLM Guard Scan]
-        I7[Content Moderation]
+%% Main Nodes
+U[SRE / User]
+F[FastAPI Service]
+
+%% Input Security
+subgraph INPUT["🛡️ Input Security Pipeline"]
+    I1[Pydantic + Regex]
+    I2[JWT Auth]
+    I3[Rate Limit]
+    I4[Token Budget]
+    I5[Input Restructure]
+    I6[LLM Guard Scan]
+    I7[Content Moderation]
+end
+
+%% Cache Layer
+subgraph CACHE["⚡ 5-Tier Redis Cache"]
+    C1[Embedding]
+    C2[Intent Router]
+    C3[SQL Gen]
+    C4[SQL Result]
+    C5[RAG Answer]
+end
+
+%% LangGraph
+subgraph LANGGRAPH["🧠 LangGraph State Machine"]
+
+    R{Intent Router}
+
+    subgraph RAG["📘 RAG Pipeline"]
+        H[HyDE]
+        E[Embed Query]
+        HR[Hybrid Retrieval]
+        RF[RRF Fusion]
+        RR[Cross-Encoder Rerank]
+        CG[CRAG Grader]
+        SP[Spotlighting]
+        TV[Tavily Fallback]
     end
 
-    %% Cache Layer
-    subgraph CACHE["⚡ 5-Tier Redis Cache"]
-        C1[Embedding Cache]
-        C2[Intent Router Cache]
-        C3[SQL Generation Cache]
-        C4[SQL Result Cache]
-        C5[RAG Answer Cache]
+    subgraph SQL["🗄️ Text2SQL Pipeline"]
+        GS[Generate SQL]
+        VS[Validate SQL]
+        HITL[Human Approval]
+        EX[Execute SQL]
+        FR[Format Results]
     end
 
-    %% LangGraph State Machine
-    subgraph LANGGRAPH["🧠 LangGraph State Machine"]
+    LG[LLM Answer Generation]
+    SR[Self-RAG Reflect]
+    FN[Finalize + Metadata]
+end
 
-        R[Intent Router]
+%% Output Security
+subgraph OUTPUT["🚨 Output Security"]
+    O1[Output Moderation]
+    O2[PII Redaction]
+    O3[Schema Validation]
+end
 
-        %% RAG Pipeline
-        subgraph RAG["📘 RAG Pipeline"]
-            H[HyDE]
-            E[Embed Query]
-            HR[Hybrid Retrieval]
-            RF[RRF Fusion]
-            RR[Cross-Encoder Rerank]
-            CG[CRAG Grader]
-            SP[Spotlighting]
-            TV[Tavily Fallback]
-        end
+%% Data Stores
+subgraph STORES["💾 Persistent Data Stores"]
+    Q[Qdrant]
+    P[PostgreSQL]
+    S[S3 / Local FS]
+    OA[OpenAI API]
+    T[Tavily API]
+end
 
-        %% SQL Pipeline
-        subgraph SQL["🗄️ Text2SQL Pipeline"]
-            GS[Generate SQL]
-            VS[Validate SQL]
-            HITL[Human Approval]
-            EX[Execute SQL]
-            FR[Format Results]
-        end
+%% Main Flow
+U --> F
+F --> I1
+I1 --> I2 --> I3 --> I4 --> I5 --> I6 --> I7
+I7 --> R
 
-        LG[LLM Answer Generation]
-        SR[Self-RAG Reflect]
-        FN[Finalize + Attach Metadata]
-    end
+%% Cache Connection
+F --> C1
+F --> C2
+F --> C3
+F --> C4
+F --> C5
 
-    %% Output Security
-    subgraph OUTPUT["🛡️ Output Security Pipeline"]
-        O1[Output Moderation]
-        O2[PII Redaction]
-        O3[Pydantic Schema Validation]
-    end
+%% Intent Routing
+R -->|rag / hybrid| H
+R -->|sql / hybrid| GS
 
-    %% Persistent Stores
-    subgraph STORES["💾 Persistent Data Stores"]
-        Q[Qdrant]
-        P[PostgreSQL]
-        S[S3 / Local FS]
-        OAI[OpenAI API]
-        T[Tavily API]
-    end
+%% RAG Flow
+H --> E --> HR --> RF --> RR --> CG --> SP
+CG -->|low relevance| TV
+TV --> SP
+SP --> LG
 
-    %% Main Flow
-    U --> F
-    F --> I1
-    I1 --> I2 --> I3 --> I4 --> I5 --> I6 --> I7
-    I7 --> R
+%% SQL Flow
+GS --> VS --> HITL --> EX --> FR --> LG
 
-    %% Cache Wrapping
-    F --> CACHE
+%% Self Reflection
+LG --> SR
+SR -->|score < 0.8| LG
+LG --> FN
 
-    %% Intent Routing
-    R -->|rag / hybrid| H
-    R -->|sql / hybrid| GS
+%% Output Security
+FN --> O1 --> O2 --> O3 --> U
 
-    %% RAG Flow
-    H --> E --> HR --> RF --> RR --> CG --> SP
-    CG -->|low relevance| TV
-    TV --> SP
-    SP --> LG
+%% Store Connections
+HR --> Q
+EX --> P
+SP --> S
+H --> OA
+GS --> OA
+TV --> T
 
-    %% SQL Flow
-    GS --> VS --> HITL --> EX --> FR --> LG
+%% Apply Styles
+class U user;
+class F api;
 
-    %% Self Reflection
-    LG --> SR
-    SR -->|score < 0.8| LG
-    LG --> FN
-
-    %% Output Security
-    FN --> O1 --> O2 --> O3 --> U
-
-    %% Data Connections
-    HR --> Q
-    EX --> P
-    H --> OAI
-    GS --> OAI
-    TV --> T
-    SP --> S
+class I1,I2,I3,I4,I5,I6,I7 input;
+class H,E,HR,RF,RR,CG,SP,TV rag;
+class GS,VS,HITL,EX,FR sql;
+class LG,SR,FN llm;
+class C1,C2,C3,C4,C5 cache;
+class O1,O2,O3 output;
+class Q,P,S,OA,T db;
+class R decision;
 ```
-
 ## Quick Start
 
 ```bash
