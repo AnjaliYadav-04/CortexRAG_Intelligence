@@ -219,18 +219,337 @@ enterprise-rag/
 └── .env.example
 ```
 
-## Sections Covered
+# ⚡ Features
 
-| # | Topic | Key Techniques |
-|---|-------|----------------|
-| 1 | Project Intro | Architecture overview |
-| 2 | Skeleton + Evals | UV, Docker, Ragas |
-| 3 | Basic RAG | Qdrant, embeddings |
-| 4 | Hybrid Search | Dense + BM25, RRF |
-| 5 | ReRanking | BGE / Voyage AI cross-encoder |
-| 6 | HyDE | 3 hypothetical answers |
-| 7 | CRAG | Relevance grading, web fallback |
-| 8 | Self-RAG | Score-based regeneration |
-| 9 | Text2SQL | GPT-4o, HITL approval |
-| 10 | Caching | 5-tier Redis TTL |
-| 11 | Guardrails | 9-layer security pipeline |
+# 1. Hybrid Retrieval
+
+Combines:
+
+- Dense vector retrieval (Qdrant)
+- Sparse retrieval (BM25)
+- Reciprocal Rank Fusion
+
+Improves:
+
+- Recall
+- Precision
+- Context quality
+
+---
+
+# 2. HyDE (Hypothetical Document Embeddings)
+
+Query augmentation using synthetic answers.
+
+Pipeline:
+
+```text
+Question → Generate 3 hypothetical answers → Embed → Retrieve
+```
+
+Improves semantic search significantly.
+
+---
+
+# 3. Cross Encoder Re-ranking
+
+Ranks retrieved chunks using:
+
+- BGE Reranker
+- Voyage AI reranker
+
+Improves final context relevance.
+
+---
+
+# 4. CRAG (Corrective RAG)
+
+Confidence-based retrieval correction.
+
+If confidence < threshold:
+
+```text
+Fallback → Tavily Search
+```
+
+Prevents weak retrieval.
+
+---
+
+# 5. Self-RAG Reflection
+
+Model evaluates its own response:
+
+- Hallucination score
+- Relevance score
+- Grounding score
+
+Regenerates if below threshold.
+
+---
+
+# 6. Text2SQL Pipeline
+
+Converts natural language into SQL.
+
+Supports:
+
+- PostgreSQL
+- Read-only SELECT
+- Schema-aware generation
+- Human approval before execution
+
+---
+
+# 7. Multi-layer Guardrails
+
+## Input
+
+| Layer | Purpose |
+|---|---|
+| Regex Guard | Detect prompt injections |
+| JWT Auth | Authentication |
+| Rate Limiter | Prevent abuse |
+| Token Budget | Cost control |
+| Restructuring | Normalize payload |
+| LLM Guard | Toxicity scan |
+| Content Filter | Safety |
+| PII Scan | Sensitive data |
+
+---
+
+## Output
+
+- PII Redaction
+- Content Moderation
+- Schema Validation
+- Retry-on-invalid-response
+
+---
+
+# 8. 5-Tier Redis Cache
+
+| Tier | Data | TTL |
+|---|---|---|
+| Tier 1 | Embeddings | 7d |
+| Tier 2 | Intent | 24h |
+| Tier 3 | SQL Gen | 24h |
+| Tier 4 | SQL Results | 15m |
+| Tier 5 | Final RAG Answer | 1h |
+
+---
+
+# 🛠 Tech Stack
+
+## Backend
+
+- FastAPI
+- LangGraph
+- Pydantic
+- SQLAlchemy
+
+## AI / LLM
+
+- GPT-4o
+- text-embedding-3-small
+
+## Retrieval
+
+- Qdrant
+- BM25
+- BGE Reranker
+
+## Databases
+
+- PostgreSQL
+- Redis
+
+## External APIs
+
+- Tavily Search API
+- OpenAI API
+
+## Frontend
+
+- Streamlit
+
+## DevOps
+
+- Docker
+- Docker Compose
+
+
+---
+
+# ⚙️ Installation
+
+## Clone Repository
+
+```bash
+git clone https://github.com/AnjaliYadav-04/CortexRAG_Intelligence.git
+cd Enterprise_RAG
+```
+
+---
+
+## Create Virtual Environment
+
+```bash
+python -m venv myenv
+```
+
+Activate:
+
+```bash
+myenv\Scripts\activate
+```
+
+---
+
+## Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+# 🔑 Environment Variables
+
+Create `.env`
+
+```env
+OPENAI_API_KEY=sk-...
+QDRANT_URL=http://localhost:6333
+QDRANT_COLLECTION=k8s_docs
+POSTGRES_DSN=postgresql://rag:rag@localhost:5432/ragdb
+REDIS_URL=redis://localhost:6379
+ For Upstash: REDIS_URL=rediss://default:<token>@<host>.upstash.io:6380
+TAVILY_API_KEY=tvly-...
+JWT_SECRET=change-me-in-production
+JWT_ALGORITHM=HS256
+LOG_LEVEL=INFO
+RATE_LIMIT_PER_MIN=20
+TOKEN_BUDGET_PER_DAY=100000
+CRAG_RELEVANCE_THRESHOLD=0.7
+SELF_RAG_SCORE_THRESHOLD=0.8
+SELF_RAG_MAX_RETRIES=2
+```
+
+---
+
+# 🐳 Run with Docker
+
+```bash
+docker-compose up --build
+```
+
+---
+
+# ▶ Run Locally
+
+API:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+UI:
+
+```bash
+streamlit run app/ui/app.py
+```
+
+---
+
+# 📊 Evaluation Metrics
+
+Uses **RAGAS** for evaluation.
+
+Measures:
+
+- Faithfulness
+- Context Recall
+- Answer Relevancy
+- Precision@K
+- SQL Accuracy
+
+Run:
+
+```bash
+python scripts/run_eval.py
+```
+
+---
+
+# 🚀 Future Roadmap
+
+- Kubernetes auto-remediation
+- Grafana integration
+- Slack bot
+- Incident timeline summarization
+- Agent memory
+- Multi-agent orchestration
+- Cost observability
+- Prompt analytics
+
+---
+
+# 💡 Example Queries
+
+### Kubernetes RCA
+
+```text
+Why is my pod in CrashLoopBackOff?
+```
+
+---
+
+### Incident Search
+
+```text
+Show incidents related to memory leaks in namespace prod
+```
+
+---
+
+### SQL Query
+
+```text
+How many incidents happened in the last 30 days?
+```
+
+---
+
+### Security Check
+
+```text
+Which deployments have failed liveness probes?
+```
+
+---
+
+# 👩‍💻 Author
+
+### Anjali Yadav
+
+AI Engineer | RAG Systems | MLOps | LLMOps | Backend Engineering
+
+LinkedIn: https://www.linkedin.com/in/anjali-yadav-464099257/ 
+GitHub: https://github.com/AnjaliYadav-04
+
+---
+
+# ⭐ Why CorexRAG?
+
+CorexRAG solves enterprise-grade RAG problems:
+
+✔ Hallucination reduction  
+✔ Better retrieval precision  
+✔ Faster responses with cache  
+✔ Secure SQL querying  
+✔ Enterprise guardrails  
+✔ Kubernetes-aware intelligence  
+✔ Production-ready architecture  
+
+---
