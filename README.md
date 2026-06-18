@@ -329,13 +329,13 @@ Supports:
 
 # 8. 5-Tier Redis Cache
 
-| Tier | Data | TTL |
-|---|---|---|
-| Tier 1 | Embeddings | 7d |
-| Tier 2 | Intent | 24h |
-| Tier 3 | SQL Gen | 24h |
-| Tier 4 | SQL Results | 15m |
-| Tier 5 | Final RAG Answer | 1h |
+| Tier | Data | 
+|---|---|
+| Tier 1 | Embeddings |
+| Tier 2 | Intent |
+| Tier 3 | SQL Gen |
+| Tier 4 | SQL Results | 
+| Tier 5 | Final RAG Answer | 
 
 ---
 
